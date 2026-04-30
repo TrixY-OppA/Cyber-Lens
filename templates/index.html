@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberLens — Threat Intelligence Portal</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="glow-orb glow-1"></div>
+    <div class="glow-orb glow-2"></div>
+
+    <div class="nav-links">
+        <span class="nav-tag">DBMS MINI PROJECT</span>
+        <span class="nav-dot"></span>
+        <span class="nav-tag">4TH SEM | CY-SEC</span>
+        <span class="nav-dot"></span>
+        <a href="/logout" style="padding:6px 16px; background:rgba(239,68,68,0.1); border:1.5px solid rgba(239,68,68,0.4); border-radius:20px; color:#DC2626; font-size:0.72rem; font-weight:700; text-decoration:none; letter-spacing:1px;">LOGOUT</a>
+    </div>
+
+    <main class="main">
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-badge">🔴 LIVE THREAT DATABASE</div>
+            <h1 class="hero-title">
+                Cyber Threat<br>
+                <span class="gradient-text">Intelligence Portal</span>
+            </h1>
+            <p class="hero-sub">Search, analyze, and monitor cyber attacks from real-world incident data</p>
+
+            <div class="search-wrapper">
+                <div class="search-bar">
+                    <span class="search-icon">⌕</span>
+                    <input type="text" id="searchInput"
+                           placeholder="Search attacks... DDoS, Phishing, Malware, Ransomware"
+                           autocomplete="off">
+                    <button class="search-btn" onclick="search()">
+                        <span>Search</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+                </div>
+                <div class="quick-tags">
+                    <span class="tag-label">Quick search:</span>
+                    <button class="quick-tag" onclick="quickSearch('DDoS')">DDoS</button>
+                    <button class="quick-tag" onclick="quickSearch('Phishing')">Phishing</button>
+                    <button class="quick-tag" onclick="quickSearch('Malware')">Malware</button>
+                    <button class="quick-tag" onclick="quickSearch('Ransomware')">Ransomware</button>
+                    <button class="quick-tag" onclick="quickSearch('Intrusion')">Intrusion</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Cards -->
+        <section class="kpi-section">
+            <div class="kpi-card" id="kpi-total">
+                <div class="kpi-icon">📊</div>
+                <div class="kpi-value" id="totalIncidents">—</div>
+                <div class="kpi-label">Total Incidents</div>
+            </div>
+            <div class="kpi-card" id="kpi-flagged">
+                <div class="kpi-icon">🚨</div>
+                <div class="kpi-value" id="flaggedCount">—</div>
+                <div class="kpi-label">Flagged Threats</div>
+            </div>
+            <div class="kpi-card" id="kpi-critical">
+                <div class="kpi-icon">⚠️</div>
+                <div class="kpi-value" id="criticalCount">—</div>
+                <div class="kpi-label">Critical Severity</div>
+            </div>
+            <div class="kpi-card" id="kpi-resolved">
+                <div class="kpi-icon">✅</div>
+                <div class="kpi-value" id="resolvedCount">—</div>
+                <div class="kpi-label">Resolved Cases</div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="title-dot"></span>
+                    Top Attack Types
+                </h2>
+                <span class="section-sub">Based on incident frequency</span>
+            </div>
+            <div id="statsContainer" class="stats-grid">
+                <div class="loading-pulse"></div>
+            </div>
+        </section>
+
+        <!-- Results -->
+        <section class="section" id="resultsSection" style="display:none">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="title-dot red"></span>
+                    Search Results
+                </h2>
+                <span class="results-count" id="resultsCount"></span>
+            </div>
+            <div class="table-wrapper">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Attack Type</th>
+                            <th>Severity</th>
+                            <th>Source IP</th>
+                            <th>Protocol</th>
+                            <th>Action Taken</th>
+                            <th>Status</th>
+                            <th>Anomaly Score</th>
+                            <th>Flag</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <div id="noResults" class="no-results" style="display:none">
+            <div class="no-results-icon">🔍</div>
+            <p>No incidents found for this query.</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>CyberLens · Cyber Threat Intelligence Management System · DBMS Mini Project 2026</p>
+    </footer>
+
+    <script>
+        async function search() {
+            const q = document.getElementById('searchInput').value.trim();
+            if (!q) return;
+
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('noResults').style.display = 'none';
+
+            try {
+                const res = await fetch(`/search?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+
+                if (data.length === 0) {
+                    document.getElementById('noResults').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('resultsCount').textContent = `${data.length} incidents found`;
+                document.getElementById('resultsSection').style.display = 'block';
+
+                const tbody = document.getElementById('resultsBody');
+                tbody.innerHTML = data.map((row, i) => `
+                    <tr class="${row.is_flagged ? 'row-flagged' : ''}">
+                        <td class="row-num">${i + 1}</td>
+                        <td class="attack-name">${row.attack_type}</td>
+                        <td><span class="badge sev-${(row.severity || 'low').toLowerCase()}">${row.severity || 'Unknown'}</span></td>
+                        <td class="mono">${row.source_ip}</td>
+                        <td><span class="proto-tag">${row.protocol}</span></td>
+                        <td>${row.action_taken}</td>
+                        <td><span class="status-tag status-${(row.status || '').toLowerCase().replace(' ', '-')}">${row.status}</span></td>
+                        <td>
+                            <div class="score-bar-wrap">
+                                <div class="score-bar" style="width:${Math.min(row.anomaly_score, 100)}%"></div>
+                                <span class="score-num">${parseFloat(row.anomaly_score).toFixed(1)}</span>
+                            </div>
+                        </td>
+                        <td>${row.is_flagged ? '<span class="flag-icon">🚨</span>' : '<span class="safe-icon">✓</span>'}</td>
+                    </tr>
+                `).join('');
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function quickSearch(term) {
+            document.getElementById('searchInput').value = term;
+            search();
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/stats');
+                const data = await res.json();
+                const max = Math.max(...data.map(d => d.total));
+
+                document.getElementById('statsContainer').innerHTML = data.map((s, i) => `
+                    <div class="stat-card" style="animation-delay:${i * 0.1}s">
+                        <div class="stat-rank">#${i + 1}</div>
+                        <div class="stat-name">${s.attack_type}</div>
+                        <div class="stat-bar-track">
+                            <div class="stat-bar-fill" style="width:${(s.total / max * 100).toFixed(0)}%"></div>
+                        </div>
+                        <div class="stat-meta">
+                            <span class="stat-count">${s.total} incidents</span>
+                            <span class="stat-score">avg score: ${parseFloat(s.avg_score).toFixed(1)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('statsContainer').innerHTML = '<p style="color:#ff4444">Could not load stats — check DB connection</p>';
+            }
+        }
+
+        async function loadKPIs() {
+            try {
+                const res = await fetch('/kpis');
+                const d = await res.json();
+                document.getElementById('totalIncidents').textContent = d.total?.toLocaleString() || '—';
+                document.getElementById('flaggedCount').textContent = d.flagged?.toLocaleString() || '—';
+                document.getElementById('criticalCount').textContent = d.critical?.toLocaleString() || '—';
+                document.getElementById('resolvedCount').textContent = d.resolved?.toLocaleString() || '—';
+            } catch (e) {}
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') search();
+        });
+
+        loadStats();
+        loadKPIs();
+    </script>
+</body>
+</html>
