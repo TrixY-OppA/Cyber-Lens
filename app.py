@@ -7,13 +7,15 @@ app.secret_key = "cyberlens_secret_2026"
 
 CYBERLENS_CODE = "Chocobar"
 
+import os
+
 def get_db():
     return mysql.connector.connect(
-        host="localhost",
-        port=3308,
-        user="root",
-        password="Tejass@06",
-        database="cyberlens"
+        host=os.environ.get('DB_HOST', 'localhost'),
+        port=int(os.environ.get('DB_PORT', 3308)),
+        user=os.environ.get('DB_USER', 'root'),
+        password=os.environ.get('DB_PASSWORD', 'Tejass@06'),
+        database=os.environ.get('DB_NAME', 'cyberlens')
     )
 
 def hash_password(password):
