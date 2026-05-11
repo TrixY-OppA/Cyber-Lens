@@ -32,7 +32,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-## Project Roadmap
+## Project Roadmap (Future Plans)
 
 To make **Cyber-Lens** a more robust CTI tool, the following enhancements are planned:
 
